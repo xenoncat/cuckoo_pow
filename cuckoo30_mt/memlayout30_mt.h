@@ -106,7 +106,7 @@
 #define S_BUCKETMASK (S_BUCKETS - 1)
 #define S0_SLOTS 9280
 #define S1_SLOTS 6208
-#define SR_SLOTS 5184
+#define SR_SLOTS 5056
 #define S0_SLOTSIZE 5
 #define S1_SLOTSIZE 5
 #define SR_SLOTSIZE 6
