@@ -1,0 +1,24 @@
+MakePairs: Looking at v-nodes, if the node degree is 1, do nothing so the edge will die off. If the degree is 2, create the pair of edges. Topologically it is (u0-v-u1), but we store in PAIRSLIST as {u0, u1, v}. PAIRSLIST is an array of structure {u0, u1, v}.
+If a v-node degree is 3, create two pairs: (u0-v-u1) and (u1-v-u2). In case the solution cycle needs to go through (u0-v-u2), FindCycle can take the path (u0-v-u1-v-u2) and account for the path length correctly because v is repeated in this case.
+Before running MakePairs, we run edge trimming until the stage where we run MakePairs, the output pairs will be less than 262144.
+Each of the pairs (or double-edge) has a single alive/dead bit in PAIRSBITFIELD. The pairs are named from 0 to 262143 based on the position in PAIRSLIST.
+
+MakePairsIndex: Creates an index (or directory) to the PAIRSLIST based on the u-node connectivity. It reads data from PAIRSLIST and performs u-node degree counting.
+If a u-node degree is 1, the pair that touches it gets killed by setting a bit in PAIRSBITFIELD, and no entry is created in PAIRSINDEX.
+If a u-node degree is 2, the two pairs that are connected to the u-node are written into PAIRSINDEX (deg2 part).
+If a u-node degree is 3, the three pairs that are connected to the u-node are written into PAIRSINDEX (deg3 part).
+The PAIRSINDEX structure has dedicated space for degrees {2,3,4,5,6}, controlled by PI_SLOTS_*.
+The part for degree 2 is an array of structure {pair0, pair1}.
+The part for degree 3 is an array of structure {pair0, pair1, pair2}.
+The part for degree 4 is an array of structure {pair0, pair1, pair2, pair3}.
+As mentioned before, the pair id is a number in range [0, 262143] given by the position in PAIRSLIST.
+
+TrimPairs: This procedure is actually edge trimming, but works on the edge pairs.
+It reads PAIRSINDEX deg 2 part, if one of {pair0, pair1} is dead according to PAIRSBITFIELD, both pairs are killed and the {pair0, pair1} entry removed from PAIRSINDEX.
+It reads PAIRSINDEX deg 3 part, if one of {pair0, pair1, pair2} is dead according to PAIRSBITFIELD, the {pair0, pair1, pair2} entry is removed from deg 3 part, and {pair0, pair1} entry is appended to deg 2 part.
+TrimPairs can usually trim pairs until no more progress can be made, that is all remaining pairs are involved in cycles.
+
+FindCycle: This is too complicated to describe. When there are degree 3 nodes remaining, it tries all possible paths at each junction. Once the junction processing is done, we just find an unvisited degree-2 u-node and follow the path: a pair connects from u-node to u-node, the destination u-node is also a degree-2 u-node.
+At the beginning of FindCycle, the PAIRSLIST {u0, u1, v} is repurposed to {reference_to_pairsindex0, reference_to_pairsindex1, v}
+
+RecoverSolution: The description of this function is simple, given 21 v-nodes in topological order, find the 42 edges solution. The difficult part is probably the undo-rename part. The v-nodes got renamed in TrimRename2 (TrimRename1 and TrimRename3 rename u-nodes). Also, during the few iterations between Iteration 1 and TrimeRename2, there are bit rotations happening. We undo the renaming and let sipvnode be the original v-node output of siphash. The EDGE1 structure is used to speed up the search, without it, we can still recover solution slowly by searching the entire edge space.
