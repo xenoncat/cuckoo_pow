@@ -2187,26 +2187,26 @@ void* worker(void *tctx)
     }
     if (unlikely(d0>262112)) {
 #if PRINTSTAT
-		if (tid==0)
-			printf("Too many nodes remaining, doing two more iterations\n");
+        if (tid==0)
+            printf("Too many nodes remaining, doing two more iterations\n");
 #endif
-		//Discard the results from TrimRename3, redo 2 trimmings, then TrimRename3 again
-		TrimEdge1Stage(ctx, ctx+CK_BIG2, ctx+CK_BIG3, tid, ramsize0, iter);
+        //Discard the results from TrimRename3, redo 2 trimmings, then TrimRename3 again
+        TrimEdge1Stage(ctx, ctx+CK_BIG2, ctx+CK_BIG3, tid, ramsize0, iter);
         TrimEdge1Stage(ctx, ctx+CK_BIG3, ctx+CK_BIG2, tid, ramsize1, iter+1);
-		TrimRename3(ctx, ctx+CK_BIG2, ctx+CK_BIG3, tid, ramsize0, iter+2);
-		d0 = 0;
-     	for (d1=0; d1<THREADS; d1++) {
-			d2 = *(int32_t*) (ctx + CK_THREADRESULT0 + d1*4);
-			d0 = (d2>d0) ? d2 : d0;
-		}
-		if (unlikely(d0>262112)) {
+        TrimRename3(ctx, ctx+CK_BIG2, ctx+CK_BIG3, tid, ramsize0, iter+2);
+        d0 = 0;
+        for (d1=0; d1<THREADS; d1++) {
+            d2 = *(int32_t*) (ctx + CK_THREADRESULT0 + d1*4);
+            d0 = (d2>d0) ? d2 : d0;
+        }
+        if (unlikely(d0>262112)) {
 #if PRINTSTAT
-			if (tid==0)
-				printf("Too many nodes remaining, give up\n");
+            if (tid==0)
+                printf("Too many nodes remaining, give up\n");
 #endif
-			goto _GiveUp;
-		}   
-	}
+            goto _GiveUp;
+        }   
+    }
     
     MakePairs(ctx, ctx+CK_PAIRSLIST, ctx+CK_BIG2, tid, ramsize1);
     MakePairsIndex(ctx, tid);
