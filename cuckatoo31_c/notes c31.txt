@@ -1,0 +1,39 @@
+seed0   Standard SIP seeding, output to 2^13 buckets.
+seed1   4-phase to keep memory footprint at 11GiB. {18 bits bitmap} {13 bits bucket}
+round2  Read from seed1 which was written in 4 phases.
+round3  {18 bits bitmap} {13 bits bucket} {5 byte slot}
+round4  {18 bits bitmap} {13 bits bucket} {5 byte slot}
+round8  Read from 5-byte slot, write to 6-byte slot to counter density problem.
+round9  {18 bits bitmap} {13 bits bucket} {6 byte slot}
+round10 {18 bits bitmap} {13 bits bucket} {6 byte slot}
+round14 Renaming round, node bits 31->25. In 6-byte, out 5-byte.
+round15 Renaming round, node bits 31->25. In 5-byte, out 5-byte. Transition to 2^8 buckets.
+round16 {17 bits bitmap} {8 bits bucket}. "sub-and-add" order tracking needed.
+round17 {17 bits bitmap} {8 bits bucket}
+round18 {17 bits bitmap} {8 bits bucket}
+round95 Renaming round, node bits 25->20.
+round96 Pairing. Previous round was sorted by nodeU, match them, output (nodeV <-> nodeV)
+roundp1 No trimming in this round. Populate links and adjlist. Bucket sort by the other side of a node pair.
+roundp2 No trimming in this round. Populate links and adjlist (the other direction).
+
+4 threaded
+        slot
+seed0   5B       {e[20:0], x, v[30:13]} bucket=v[12:0] thread=e[30:29]
+seed1   5B 21+10 {v[3:0], v[30:13], u[30:13]} bucket=u[12:0] thread=v[] sub=v[]
+round2  5B 4+9   {u[3:0], v[30:13], u[30:13]} bucket=v[12:0] thread=u[12:11]
+round3  5B 4+9   {v[3:0], v[30:13], u[30:13]} bucket=u[12:0] thread=v[12:11]
+round4  5B 4+9   {u[3:0], v[30:13], u[30:13]} bucket=v[12:0] thread=u[12:11]
+round8  6B 4+9   {1'b0, u[10:0], v[30:13], u[30:13]} bucket=v[12:0] thread=u[12:11]
+round9  6B ft    {1'b0, v[10:0], v[30:13], u[30:13]} bucket=u[12:0] thread=v[12:11]
+round10 6B ft    {1'b0, u[10:0], v[30:13], u[30:13]} bucket=v[12:0] thread=u[12:11]
+round14 5B ft    {u[9:0],  v[30:13], u1[11:0](30:13)} bucket=v[12:0] thread=u[12:11]
+round15 5B 10+3  {v[5:0], v1[11:0](30:13), v[12:8], u1[11:0](30:13), u[12:8]} bucket=u[7:0] thread=v[12:11]
+round16 5B 6+7   {u[5:0], v1[11:0](30:13), v[12:8], u1[11:0](30:13), u[12:8]} bucket=v[7:0] thread=u[7:6]
+round17 5B ft    {v[5:0], v1[11:0](30:13), v[12:8], u1[11:0](30:13), u[12:8]} bucket=u[7:0] thread=v[7:6]
+round18 5B ft    {u[5:0], v1[11:0](30:13), v[12:8], u1[11:0](30:13), u[12:8]} bucket=v[7:0] thread=u[7:6]
+round95 5B ft    {3'b0, v2[11:0](30:13)(12:8), v[7:0], u1[11:0](30:13), u[12:8]} bucket=u[9:0] thread=v[7:6]
+round96 8B       {1'b1, 11'b0, v2[11:0](30:13)(12:8), v[7:0], 12'b0, v2[11:0](30:13)(12:8), v[7:0]} bucket=v_lsw[6:0] thread=u[9:8]
+roundp1 8B       {12'b0, v2[11:0](30:13)(12:8), v[7:0], 12'b0, v2[11:0](30:13)(12:8), v[7:0]} bucket=v_msw[6:0] thread=v_lsw[6:5]
+21+10: In previous round 21 bits were recorded in a slot. In this round use "sub-and-add" to recover 10 high bits based on ordering assumption
+4+9:   In previous round 4 bits were recorded in a slot. In this round use "sub-and-add" to recover 9 high bits based on ordering assumption
+ft:    Use "fromthread" to recover missing bits

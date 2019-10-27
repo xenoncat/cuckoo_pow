@@ -1,0 +1,32 @@
+sipseed0    cuckarood seeding. 2^(10+1) buckets (10 bits node + 1 bit direction)
+round1      2-phase to keep memory footprint at 4GiB. {10 bits bucket} {18 bits bitmap}
+round2      Read from seed1 which was written in 2 phases.
+round3      {10 bits bucket} {18 bits bitmap}
+round4      {10 bits bucket} {18 bits bitmap}
+round14     Renaming round, node bits 28->22.
+round15     Renaming round, node bits 28->22. Transition to 2^(7+1) buckets.
+round16     {7 bits bucket} {15 bits bitmap}
+round17     {7 bits bucket} {15 bits bitmap}
+round40     Pairing. Previous round was sorted by nodeV, match them, output (nodeU -> nodeU)
+roundpi  41 Initialize bitmap, count nodeU.
+roundp0  42 Trit-based trimming
+roundp1  43 Trit-based trimming
+roundpr0 66 Renaming round, node bits 22->18. Bucket sort by the other side of a node pair.
+roundpr1 67 Rename the other side using the renaming table created in roundpr0. Populate links and adjlist.
+
+4 threaded
+sipseed0 6B {x, x, v[27:0], u[27:10]} bucket=u[9:0],d thread=e[28:27]
+round1   5B {u[3:0],   v[17:0], u[27:10]} bucket=v[27:18],d thread=u[8:7] sub=u[9]
+round2   5B {v[21:18], v[17:0], u[27:10]} bucket=u[9:0],d thread=v[27:26]
+round3   5B {u[3:0],   v[17:0], u[27:10]} bucket=v[27:18],d thread=u[9:8]
+round4   5B {v[21:18], v[17:0], u[27:10]} bucket=u[9:0],d thread=v[27:26]
+round14  5B {v[27:18], v1[11:0](17:0), u[27:10]} bucket=u[9:0],d thread=v[27:26]
+round15  4B {u[4:3],   v1[11:0](17:0), v[20:18], u1[11:0](27:10), u[2:0]} bucket=v[27:21],d thread=u[9:8]
+round16  4B {v[22:21], v1[11:0](17:0), v[20:18], u1[11:0](27:10), u[2:0]} bucket=u[9:3],d thread=v[27:26]
+round17  4B {u[4:3],   v1[11:0](17:0), v[20:18], u1[11:0](27:10), u[2:0]} bucket=v[27:21],d thread=u[9:8]
+round40  8B {1'b1, 9'b0, u1[11:0](27:10), u[2:0], u[9:3], 10'b0, u1[11:0](27:10), u[2:0], u[9:3]} bucket=u_lsw[9:3] thread=v[27:26]
+roundpi  8B {10'b0, u1[11:0](27:10), u[2:0], u[9:3], 10'b0, u1[11:0](27:10), u[2:0], u[9:3]} bucket=u_msw[9:3] thread=u_lsw[9:8]
+roundp0  8B {10'b0, u1[11:0](27:10), u[2:0], u[9:3], 10'b0, u1[11:0](27:10), u[2:0], u[9:3]} bucket=u_lsw[9:3] thread=u_msw[9:8]
+roundp1  8B {10'b0, u1[11:0](27:10), u[2:0], u[9:3], 10'b0, u1[11:0](27:10), u[2:0], u[9:3]} bucket=u_msw[9:3] thread=u_lsw[9:8]
+roundpr0 8B {16'b0, u2[15:0](27:10,2:0,7:3), 10'b0, u1[11:0](27:10), u[2:0], u[9:3]} bucket=u_lsw[9:3] thread=u_msw[9:8]
+roundpr1 writes to links[] and adjlist[]
